@@ -106,3 +106,73 @@ export function calculateMACD(
     crossType,
   };
 }
+
+export interface StochasticResult {
+  k: number;
+  d: number;
+  signal: "Buy" | "Sell" | null;
+}
+
+export function calculateStochastic(
+  highs: number[],
+  lows: number[],
+  closes: number[],
+  periods: number = 14,
+  smoothK: number = 3,
+  smoothD: number = 3,
+): StochasticResult {
+  if (
+    highs.length < periods ||
+    lows.length < periods ||
+    closes.length < periods
+  ) {
+    throw new Error("Not enough data points to calculate Stochastic.");
+  }
+
+  // Calculate %K for each period
+  const rawK: number[] = [];
+  for (let i = periods - 1; i < closes.length; i++) {
+    const currentClose = closes[i];
+    const highestHigh = Math.max(...highs.slice(i - periods + 1, i + 1));
+    const lowestLow = Math.min(...lows.slice(i - periods + 1, i + 1));
+    const k = ((currentClose - lowestLow) / (highestHigh - lowestLow)) * 100;
+    rawK.push(k);
+  }
+
+  // Smooth %K using SMA
+  const smoothedK = rawK
+    .slice(smoothK - 1)
+    .map(
+      (_, i) =>
+        rawK.slice(i, i + smoothK).reduce((sum, val) => sum + val, 0) / smoothK,
+    );
+
+  // Calculate %D (SMA of smoothed %K)
+  const d = smoothedK
+    .slice(smoothD - 1)
+    .map(
+      (_, i) =>
+        smoothedK.slice(i, i + smoothD).reduce((sum, val) => sum + val, 0) /
+        smoothD,
+    );
+
+  // Get the most recent values
+  const currentK = smoothedK[smoothedK.length - 1];
+  const previousK = smoothedK[smoothedK.length - 2];
+  const currentD = d[d.length - 1];
+  const previousD = d[d.length - 2];
+
+  // Determine buy/sell signal
+  let signal: "Buy" | "Sell" | null = null;
+  if (previousK < previousD && currentK > currentD && currentK < 20) {
+    signal = "Buy";
+  } else if (previousK > previousD && currentK < currentD && currentK > 80) {
+    signal = "Sell";
+  }
+
+  return {
+    k: Number(currentK.toFixed(2)),
+    d: Number(currentD.toFixed(2)),
+    signal,
+  };
+}

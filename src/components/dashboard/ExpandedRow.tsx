@@ -24,6 +24,11 @@ interface ExpandedRowProps {
     h4: number;
     h1: number;
   };
+  stochastic?: {
+    k: number;
+    d: number;
+    signal: "Buy" | "Sell" | null;
+  };
   trend?: "Bullish" | "Bearish";
   crossType?: "Bullish Cross" | "Bearish Cross" | null;
   volume?: number;
@@ -53,14 +58,51 @@ const defaultChartData = Array.from({ length: 24 }, (_, i) => ({
 const RSIIndicator = ({ value, label }: { value: number; label: string }) => (
   <div className="space-y-1">
     <h4 className="font-medium">{label}</h4>
-    <div className="text-xl">{value}</div>
+    <div className="text-xl">{value.toFixed(2)}</div>
     <Badge
       variant={
         value > 70 ? "destructive" : value < 30 ? "default" : "secondary"
       }
     >
+      {value.toFixed(2)} -{" "}
       {value > 70 ? "Overbought" : value < 30 ? "Oversold" : "Neutral"}
     </Badge>
+  </div>
+);
+
+const StochasticIndicator = ({
+  k,
+  d,
+  signal,
+}: {
+  k: number;
+  d: number;
+  signal: "Buy" | "Sell" | null;
+}) => (
+  <div className="space-y-2">
+    <h4 className="font-medium">Stochastic (14,3,3)</h4>
+    <div className="flex space-x-4">
+      <div>
+        <div className="text-sm text-muted-foreground">%K</div>
+        <div className="text-xl">{k.toFixed(2)}</div>
+      </div>
+      <div>
+        <div className="text-sm text-muted-foreground">%D</div>
+        <div className="text-xl">{d.toFixed(2)}</div>
+      </div>
+    </div>
+    <div className="flex items-center space-x-2">
+      <Badge
+        variant={k > 80 ? "destructive" : k < 20 ? "default" : "secondary"}
+      >
+        {k > 80 ? "Overbought" : k < 20 ? "Oversold" : "Neutral"}
+      </Badge>
+      {signal && (
+        <Badge variant={signal === "Buy" ? "default" : "destructive"}>
+          {signal} Signal
+        </Badge>
+      )}
+    </div>
   </div>
 );
 
@@ -69,6 +111,7 @@ const ExpandedRow = ({
   price = 45000,
   change24h = 2.5,
   rsi = { daily: 65, h4: 55, h1: 45 },
+  stochastic = { k: 65, d: 60, signal: null },
   trend = "Bullish",
   crossType = null,
   volume = 1000000,
@@ -151,6 +194,7 @@ const ExpandedRow = ({
                 <RSIIndicator value={rsi.h4} label="RSI (4H)" />
                 <RSIIndicator value={rsi.h1} label="RSI (1H)" />
               </div>
+              <StochasticIndicator {...stochastic} />
               <div className="space-y-2">
                 <h4 className="font-medium">MACD Signal</h4>
                 <div className="text-xl">{trend}</div>

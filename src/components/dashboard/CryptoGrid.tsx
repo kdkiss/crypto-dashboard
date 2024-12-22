@@ -16,13 +16,21 @@ interface CryptoData {
   symbol: string;
   price: number;
   change24h: number;
-  rsi: number;
+  rsi: {
+    daily: number;
+    h4: number;
+    h1: number;
+  };
   trend: "Bullish" | "Bearish";
   crossType: "Bullish Cross" | "Bearish Cross" | null;
   volume: number;
   chartData: Array<{
     timestamp: string;
     price: number;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
   }>;
 }
 
@@ -36,13 +44,21 @@ const defaultData: CryptoData[] = [
     symbol: "BTC/USD",
     price: 45000,
     change24h: 2.5,
-    rsi: 65,
+    rsi: {
+      daily: 65,
+      h4: 55,
+      h1: 45,
+    },
     trend: "Bullish",
     crossType: null,
     volume: 1000000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
       price: Math.random() * 1000 + 44000,
+      open: Math.random() * 1000 + 44000,
+      high: Math.random() * 1000 + 45000,
+      low: Math.random() * 1000 + 43000,
+      close: Math.random() * 1000 + 44000,
     })),
   },
   {
@@ -50,27 +66,21 @@ const defaultData: CryptoData[] = [
     symbol: "ETH/USD",
     price: 2800,
     change24h: -1.2,
-    rsi: 45,
+    rsi: {
+      daily: 45,
+      h4: 52,
+      h1: 48,
+    },
     trend: "Bearish",
     crossType: "Bearish Cross",
     volume: 500000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
       price: Math.random() * 100 + 2750,
-    })),
-  },
-  {
-    id: "3",
-    symbol: "SOL/USD",
-    price: 120,
-    change24h: 5.8,
-    rsi: 72,
-    trend: "Bullish",
-    crossType: "Bullish Cross",
-    volume: 200000,
-    chartData: Array.from({ length: 24 }, (_, i) => ({
-      timestamp: `${i}:00`,
-      price: Math.random() * 10 + 115,
+      open: Math.random() * 100 + 2750,
+      high: Math.random() * 100 + 2850,
+      low: Math.random() * 100 + 2650,
+      close: Math.random() * 100 + 2750,
     })),
   },
 ];
@@ -87,7 +97,7 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
             <TableHead>Symbol</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>24h Change</TableHead>
-            <TableHead>RSI</TableHead>
+            <TableHead>RSI (1H)</TableHead>
             <TableHead>MACD</TableHead>
             <TableHead>Volume</TableHead>
           </TableRow>
@@ -121,14 +131,14 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 <TableCell>
                   <Badge
                     variant={
-                      crypto.rsi > 70
+                      crypto.rsi.h1 > 70
                         ? "destructive"
-                        : crypto.rsi < 30
+                        : crypto.rsi.h1 < 30
                           ? "default"
                           : "secondary"
                     }
                   >
-                    {crypto.rsi}
+                    {crypto.rsi.h1.toFixed(2)}
                   </Badge>
                 </TableCell>
                 <TableCell>

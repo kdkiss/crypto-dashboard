@@ -8,13 +8,26 @@ export interface CryptoData {
   symbol: string;
   price: number;
   change24h: number;
-  rsi: number;
+  rsi: {
+    daily: number;
+    h4: number;
+    h1: number;
+  };
+  stochastic: {
+    k: number;
+    d: number;
+    signal: "Buy" | "Sell" | null;
+  };
   trend: "Bullish" | "Bearish";
   crossType: "Bullish Cross" | "Bearish Cross" | null;
   volume: number;
   chartData?: Array<{
     timestamp: string;
     price: number;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
   }>;
   levels?: Array<{
     date: string;
@@ -30,13 +43,26 @@ const defaultData: CryptoData[] = [
     symbol: "BTC/USDT",
     price: 45000,
     change24h: 2.5,
-    rsi: 65,
+    rsi: {
+      daily: 65,
+      h4: 55,
+      h1: 45,
+    },
+    stochastic: {
+      k: 65,
+      d: 60,
+      signal: null,
+    },
     trend: "Bullish",
     crossType: null,
     volume: 1000000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
       price: Math.random() * 1000 + 44000,
+      open: Math.random() * 1000 + 44000,
+      high: Math.random() * 1000 + 45000,
+      low: Math.random() * 1000 + 43000,
+      close: Math.random() * 1000 + 44000,
     })),
     levels: [
       { date: "2024-03-20", level: 44000 },
@@ -50,13 +76,26 @@ const defaultData: CryptoData[] = [
     symbol: "ETH/USDT",
     price: 2800,
     change24h: -1.2,
-    rsi: 45,
+    rsi: {
+      daily: 45,
+      h4: 52,
+      h1: 48,
+    },
+    stochastic: {
+      k: 85,
+      d: 82,
+      signal: "Sell",
+    },
     trend: "Bearish",
     crossType: "Bearish Cross",
     volume: 500000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
       price: Math.random() * 100 + 2750,
+      open: Math.random() * 100 + 2750,
+      high: Math.random() * 100 + 2850,
+      low: Math.random() * 100 + 2650,
+      close: Math.random() * 100 + 2750,
     })),
     levels: [
       { date: "2024-03-20", level: 2700 },
@@ -65,32 +104,12 @@ const defaultData: CryptoData[] = [
       { date: "2024-03-20", level: 3000 },
     ],
   },
-  {
-    id: "solusdt",
-    symbol: "SOL/USDT",
-    price: 120,
-    change24h: 5.8,
-    rsi: 72,
-    trend: "Bullish",
-    crossType: "Bullish Cross",
-    volume: 200000,
-    chartData: Array.from({ length: 24 }, (_, i) => ({
-      timestamp: `${i}:00`,
-      price: Math.random() * 10 + 115,
-    })),
-    levels: [
-      { date: "2024-03-20", level: 115 },
-      { date: "2024-03-20", level: 125 },
-      { date: "2024-03-20", level: 110 },
-      { date: "2024-03-20", level: 130 },
-    ],
-  },
 ];
 
-async function fetchKlines(symbol: string): Promise<any[]> {
+async function fetchKlines(symbol: string, interval: string): Promise<any[]> {
   try {
     const response = await fetch(
-      `${BINANCE_REST_URL}/klines?symbol=${symbol}&interval=1h&limit=100`,
+      `${BINANCE_REST_URL}/klines?symbol=${symbol}&interval=${interval}&limit=100`,
     );
     const data = await response.json();
     return data;
@@ -145,23 +164,43 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
     const cryptoData = await Promise.all(
       SYMBOLS.map(async (symbol) => {
         try {
-          const [klines, ticker, levels] = await Promise.all([
-            fetchKlines(symbol),
-            fetch24hTicker(symbol),
-            fetchSupportResistanceLevels(symbol.slice(0, -4)),
-          ]);
+          const [dailyKlines, h4Klines, h1Klines, ticker, levels] =
+            await Promise.all([
+              fetchKlines(symbol, "1d"),
+              fetchKlines(symbol, "4h"),
+              fetchKlines(symbol, "1h"),
+              fetch24hTicker(symbol),
+              fetchSupportResistanceLevels(symbol.slice(0, -4)),
+            ]);
 
-          if (!klines.length || !ticker) {
+          if (!h1Klines.length || !ticker) {
             throw new Error(`No data available for ${symbol}`);
           }
 
-          const prices = klines.map((candle) => parseFloat(candle[4])); // Close prices
-          const rsi = calculateRSI(prices);
-          const macdResult = calculateMACD(prices);
+          // Calculate RSI for different timeframes
+          const dailyPrices = dailyKlines.map((candle) =>
+            parseFloat(candle[4]),
+          );
+          const h4Prices = h4Klines.map((candle) => parseFloat(candle[4]));
+          const h1Prices = h1Klines.map((candle) => parseFloat(candle[4]));
 
-          const chartData = klines.map((candle) => ({
+          const rsi = {
+            daily: calculateRSI(dailyPrices),
+            h4: calculateRSI(h4Prices),
+            h1: calculateRSI(h1Prices),
+          };
+
+          const stochastic = calculateStochastic(
+            h1Klines.map((candle) => parseFloat(candle[2])), // highs
+            h1Klines.map((candle) => parseFloat(candle[3])), // lows
+            h1Klines.map((candle) => parseFloat(candle[4])), // closes
+          );
+
+          const macdResult = calculateMACD(h1Prices);
+
+          const chartData = h1Klines.map((candle) => ({
             timestamp: new Date(candle[0]).toLocaleTimeString(),
-            price: parseFloat(candle[4]), // Keep for compatibility
+            price: parseFloat(candle[4]),
             open: parseFloat(candle[1]),
             high: parseFloat(candle[2]),
             low: parseFloat(candle[3]),
@@ -175,6 +214,7 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             change24h: parseFloat(ticker.priceChangePercent),
             volume: parseFloat(ticker.volume),
             rsi,
+            stochastic,
             trend: macdResult.trend,
             crossType: macdResult.crossType,
             chartData,
@@ -201,7 +241,7 @@ export async function fetchCoinHistory(symbol: string): Promise<any> {
   try {
     const formattedSymbol = symbol.replace("/", "");
     const [klines, levels] = await Promise.all([
-      fetchKlines(formattedSymbol),
+      fetchKlines(formattedSymbol, "1h"),
       fetchSupportResistanceLevels(symbol.split("/")[0]),
     ]);
 
