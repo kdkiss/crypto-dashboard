@@ -21,8 +21,43 @@ interface CryptoData {
     h4: number;
     h1: number;
   };
-  trend: "Bullish" | "Bearish";
-  crossType: "Bullish Cross" | "Bearish Cross" | null;
+  macd: {
+    daily: {
+      trend: "Bullish" | "Bearish";
+      crossType: "Bullish Cross" | "Bearish Cross" | null;
+      currentMACD: number;
+      currentSignal: number;
+      currentHistogram: number;
+      macdLine: number[];
+      signalLine: number[];
+      histogram: number[];
+    };
+    h4: {
+      trend: "Bullish" | "Bearish";
+      crossType: "Bullish Cross" | "Bearish Cross" | null;
+      currentMACD: number;
+      currentSignal: number;
+      currentHistogram: number;
+      macdLine: number[];
+      signalLine: number[];
+      histogram: number[];
+    };
+    h1: {
+      trend: "Bullish" | "Bearish";
+      crossType: "Bullish Cross" | "Bearish Cross" | null;
+      currentMACD: number;
+      currentSignal: number;
+      currentHistogram: number;
+      macdLine: number[];
+      signalLine: number[];
+      histogram: number[];
+    };
+  };
+  stochastic: {
+    k: number;
+    d: number;
+    signal: "Buy" | "Sell" | null;
+  };
   volume: number;
   chartData: Array<{
     timestamp: string;
@@ -49,8 +84,43 @@ const defaultData: CryptoData[] = [
       h4: 55,
       h1: 45,
     },
-    trend: "Bullish",
-    crossType: null,
+    macd: {
+      daily: {
+        trend: "Bullish",
+        crossType: null,
+        currentMACD: 145.2,
+        currentSignal: 132.5,
+        currentHistogram: 12.7,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h4: {
+        trend: "Bullish",
+        crossType: "Bullish Cross",
+        currentMACD: 125.4,
+        currentSignal: 115.2,
+        currentHistogram: 10.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h1: {
+        trend: "Bullish",
+        crossType: null,
+        currentMACD: 95.6,
+        currentSignal: 88.4,
+        currentHistogram: 7.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+    },
+    stochastic: {
+      k: 65,
+      d: 60,
+      signal: null,
+    },
     volume: 1000000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
@@ -71,8 +141,43 @@ const defaultData: CryptoData[] = [
       h4: 52,
       h1: 48,
     },
-    trend: "Bearish",
-    crossType: "Bearish Cross",
+    macd: {
+      daily: {
+        trend: "Bearish",
+        crossType: "Bearish Cross",
+        currentMACD: -45.2,
+        currentSignal: -32.5,
+        currentHistogram: -12.7,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h4: {
+        trend: "Bearish",
+        crossType: null,
+        currentMACD: -25.4,
+        currentSignal: -15.2,
+        currentHistogram: -10.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h1: {
+        trend: "Bearish",
+        crossType: null,
+        currentMACD: -15.6,
+        currentSignal: -8.4,
+        currentHistogram: -7.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+    },
+    stochastic: {
+      k: 85,
+      d: 82,
+      signal: "Sell",
+    },
     volume: 500000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
@@ -144,10 +249,12 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 <TableCell>
                   <Badge
                     variant={
-                      crypto.trend === "Bullish" ? "default" : "destructive"
+                      crypto.macd.daily.trend === "Bullish"
+                        ? "default"
+                        : "destructive"
                     }
                   >
-                    {crypto.crossType ? crypto.crossType : crypto.trend}
+                    {crypto.macd.daily.crossType || crypto.macd.daily.trend}
                   </Badge>
                 </TableCell>
                 <TableCell>${crypto.volume.toLocaleString()}</TableCell>

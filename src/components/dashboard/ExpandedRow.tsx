@@ -14,6 +14,7 @@ import {
   Area,
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
+import { MACDResult } from "@/lib/indicators";
 
 interface ExpandedRowProps {
   symbol?: string;
@@ -24,13 +25,16 @@ interface ExpandedRowProps {
     h4: number;
     h1: number;
   };
+  macd?: {
+    daily: MACDResult;
+    h4: MACDResult;
+    h1: MACDResult;
+  };
   stochastic?: {
     k: number;
     d: number;
     signal: "Buy" | "Sell" | null;
   };
-  trend?: "Bullish" | "Bearish";
-  crossType?: "Bullish Cross" | "Bearish Cross" | null;
   volume?: number;
   chartData?: Array<{
     timestamp: string;
@@ -70,6 +74,21 @@ const RSIIndicator = ({ value, label }: { value: number; label: string }) => (
   </div>
 );
 
+const MACDIndicator = ({
+  data,
+  label,
+}: {
+  data: MACDResult;
+  label: string;
+}) => (
+  <div className="space-y-1">
+    <h4 className="font-medium">{label}</h4>
+    <Badge variant={data.trend === "Bullish" ? "default" : "destructive"}>
+      {data.crossType || data.trend}
+    </Badge>
+  </div>
+);
+
 const StochasticIndicator = ({
   k,
   d,
@@ -80,7 +99,7 @@ const StochasticIndicator = ({
   signal: "Buy" | "Sell" | null;
 }) => (
   <div className="space-y-2">
-    <h4 className="font-medium">Stochastic (14,3,3)</h4>
+    <h4 className="font-medium">Stochastic Daily (14,3,3)</h4>
     <div className="flex space-x-4">
       <div>
         <div className="text-sm text-muted-foreground">%K</div>
@@ -111,9 +130,39 @@ const ExpandedRow = ({
   price = 45000,
   change24h = 2.5,
   rsi = { daily: 65, h4: 55, h1: 45 },
+  macd = {
+    daily: {
+      trend: "Bullish",
+      crossType: null,
+      currentMACD: 145.2,
+      currentSignal: 132.5,
+      currentHistogram: 12.7,
+      macdLine: [],
+      signalLine: [],
+      histogram: [],
+    },
+    h4: {
+      trend: "Bullish",
+      crossType: "Bullish Cross",
+      currentMACD: 125.4,
+      currentSignal: 115.2,
+      currentHistogram: 10.2,
+      macdLine: [],
+      signalLine: [],
+      histogram: [],
+    },
+    h1: {
+      trend: "Bullish",
+      crossType: null,
+      currentMACD: 95.6,
+      currentSignal: 88.4,
+      currentHistogram: 7.2,
+      macdLine: [],
+      signalLine: [],
+      histogram: [],
+    },
+  },
   stochastic = { k: 65, d: 60, signal: null },
-  trend = "Bullish",
-  crossType = null,
   volume = 1000000,
   chartData = defaultChartData,
   levels = [],
@@ -194,18 +243,12 @@ const ExpandedRow = ({
                 <RSIIndicator value={rsi.h4} label="RSI (4H)" />
                 <RSIIndicator value={rsi.h1} label="RSI (1H)" />
               </div>
-              <StochasticIndicator {...stochastic} />
-              <div className="space-y-2">
-                <h4 className="font-medium">MACD Signal</h4>
-                <div className="text-xl">{trend}</div>
-                <div className="space-x-2">
-                  <Badge
-                    variant={trend === "Bullish" ? "default" : "destructive"}
-                  >
-                    {crossType || trend}
-                  </Badge>
-                </div>
+              <div className="grid grid-cols-3 gap-4">
+                <MACDIndicator data={macd.daily} label="MACD (Daily)" />
+                <MACDIndicator data={macd.h4} label="MACD (4H)" />
+                <MACDIndicator data={macd.h1} label="MACD (1H)" />
               </div>
+              <StochasticIndicator {...stochastic} />
             </div>
           </TabsContent>
 

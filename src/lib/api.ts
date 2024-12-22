@@ -1,4 +1,9 @@
-import { calculateRSI, calculateMACD } from "./indicators";
+import {
+  calculateRSI,
+  calculateMACD,
+  calculateStochastic,
+  type MACDResult,
+} from "./indicators";
 
 const BINANCE_REST_URL = "https://api.binance.com/api/v3";
 const TM_API_KEY = "tm-c20bcf38-0000-43f4-ba11-abc3fe6dc00f";
@@ -13,13 +18,16 @@ export interface CryptoData {
     h4: number;
     h1: number;
   };
+  macd: {
+    daily: MACDResult;
+    h4: MACDResult;
+    h1: MACDResult;
+  };
   stochastic: {
     k: number;
     d: number;
     signal: "Buy" | "Sell" | null;
   };
-  trend: "Bullish" | "Bearish";
-  crossType: "Bullish Cross" | "Bearish Cross" | null;
   volume: number;
   chartData?: Array<{
     timestamp: string;
@@ -35,7 +43,16 @@ export interface CryptoData {
   }>;
 }
 
-const SYMBOLS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT"];
+const SYMBOLS = [
+  "BTCUSDT",
+  "ETHUSDT",
+  "SOLUSDT",
+  "BNBUSDT",
+  "XRPUSDT",
+  "TAOUSDT",
+  "AAVEUSDT",
+  "LINKUSDT",
+];
 
 const defaultData: CryptoData[] = [
   {
@@ -48,13 +65,43 @@ const defaultData: CryptoData[] = [
       h4: 55,
       h1: 45,
     },
+    macd: {
+      daily: {
+        trend: "Bullish",
+        crossType: null,
+        currentMACD: 145.2,
+        currentSignal: 132.5,
+        currentHistogram: 12.7,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h4: {
+        trend: "Bullish",
+        crossType: "Bullish Cross",
+        currentMACD: 125.4,
+        currentSignal: 115.2,
+        currentHistogram: 10.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h1: {
+        trend: "Bullish",
+        crossType: null,
+        currentMACD: 95.6,
+        currentSignal: 88.4,
+        currentHistogram: 7.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+    },
     stochastic: {
       k: 65,
       d: 60,
       signal: null,
     },
-    trend: "Bullish",
-    crossType: null,
     volume: 1000000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
@@ -81,13 +128,43 @@ const defaultData: CryptoData[] = [
       h4: 52,
       h1: 48,
     },
+    macd: {
+      daily: {
+        trend: "Bearish",
+        crossType: null,
+        currentMACD: -45.2,
+        currentSignal: -32.5,
+        currentHistogram: -12.7,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h4: {
+        trend: "Bearish",
+        crossType: "Bearish Cross",
+        currentMACD: -25.4,
+        currentSignal: -15.2,
+        currentHistogram: -10.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+      h1: {
+        trend: "Bearish",
+        crossType: null,
+        currentMACD: -15.6,
+        currentSignal: -8.4,
+        currentHistogram: -7.2,
+        macdLine: [],
+        signalLine: [],
+        histogram: [],
+      },
+    },
     stochastic: {
       k: 85,
       d: 82,
       signal: "Sell",
     },
-    trend: "Bearish",
-    crossType: "Bearish Cross",
     volume: 500000,
     chartData: Array.from({ length: 24 }, (_, i) => ({
       timestamp: `${i}:00`,
@@ -173,7 +250,12 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
               fetchSupportResistanceLevels(symbol.slice(0, -4)),
             ]);
 
-          if (!h1Klines.length || !ticker) {
+          if (
+            !dailyKlines.length ||
+            !h4Klines.length ||
+            !h1Klines.length ||
+            !ticker
+          ) {
             throw new Error(`No data available for ${symbol}`);
           }
 
@@ -190,13 +272,19 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             h1: calculateRSI(h1Prices),
           };
 
-          const stochastic = calculateStochastic(
-            h1Klines.map((candle) => parseFloat(candle[2])), // highs
-            h1Klines.map((candle) => parseFloat(candle[3])), // lows
-            h1Klines.map((candle) => parseFloat(candle[4])), // closes
-          );
+          // Calculate MACD for different timeframes
+          const macd = {
+            daily: calculateMACD(dailyPrices),
+            h4: calculateMACD(h4Prices),
+            h1: calculateMACD(h1Prices),
+          };
 
-          const macdResult = calculateMACD(h1Prices);
+          // Calculate Stochastic using daily timeframe
+          const stochastic = calculateStochastic(
+            dailyKlines.map((candle) => parseFloat(candle[2])), // highs
+            dailyKlines.map((candle) => parseFloat(candle[3])), // lows
+            dailyKlines.map((candle) => parseFloat(candle[4])), // closes
+          );
 
           const chartData = h1Klines.map((candle) => ({
             timestamp: new Date(candle[0]).toLocaleTimeString(),
@@ -214,23 +302,27 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             change24h: parseFloat(ticker.priceChangePercent),
             volume: parseFloat(ticker.volume),
             rsi,
+            macd,
             stochastic,
-            trend: macdResult.trend,
-            crossType: macdResult.crossType,
             chartData,
             levels,
           };
         } catch (error) {
           console.error(`Error processing ${symbol}:`, error);
-          return (
-            defaultData.find((d) => d.id === symbol.toLowerCase()) ||
-            defaultData[0]
-          );
+          return null;
         }
       }),
     );
 
-    return cryptoData.filter(Boolean);
+    // Filter out any failed requests and duplicates
+    const validData = cryptoData.filter(
+      (data): data is CryptoData => data !== null,
+    );
+    const uniqueData = validData.filter(
+      (data, index, self) => index === self.findIndex((d) => d.id === data.id),
+    );
+
+    return uniqueData.length > 0 ? uniqueData : defaultData;
   } catch (error) {
     console.error("Error fetching crypto data:", error);
     return defaultData;
