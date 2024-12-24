@@ -15,6 +15,7 @@ interface CryptoData {
   id: string;
   symbol: string;
   price: number;
+  previousClose?: number;
   change24h: number;
   rsi: {
     daily: number;
@@ -78,6 +79,7 @@ const defaultData: CryptoData[] = [
     id: "1",
     symbol: "BTC/USD",
     price: 45000,
+    previousClose: 44000,
     change24h: 2.5,
     rsi: {
       daily: 65,
@@ -135,6 +137,7 @@ const defaultData: CryptoData[] = [
     id: "2",
     symbol: "ETH/USD",
     price: 2800,
+    previousClose: 2850,
     change24h: -1.2,
     rsi: {
       daily: 45,
@@ -234,7 +237,11 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={crypto.change24h >= 0 ? "default" : "destructive"}
+                    className={
+                      crypto.change24h >= 0
+                        ? "bg-green-500 hover:bg-green-600"
+                        : ""
+                    }
                   >
                     {crypto.change24h >= 0 ? "+" : ""}
                     {crypto.change24h}%

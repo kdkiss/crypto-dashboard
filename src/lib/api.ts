@@ -12,6 +12,8 @@ export interface CryptoData {
   id: string;
   symbol: string;
   price: number;
+  previousClose: number;
+  previousWeekClose: number;
   change24h: number;
   rsi: {
     daily: number;
@@ -61,6 +63,8 @@ const defaultData: CryptoData[] = [
     id: "btcusdt",
     symbol: "BTC/USDT",
     price: 45000,
+    previousClose: 44000,
+    previousWeekClose: 43500,
     change24h: 2.5,
     rsi: {
       daily: 65,
@@ -124,6 +128,8 @@ const defaultData: CryptoData[] = [
     id: "ethusdt",
     symbol: "ETH/USDT",
     price: 2800,
+    previousClose: 2850,
+    previousWeekClose: 2750,
     change24h: -1.2,
     rsi: {
       daily: 45,
@@ -243,17 +249,25 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
     const cryptoData = await Promise.all(
       SYMBOLS.map(async (symbol) => {
         try {
-          const [dailyKlines, h4Klines, h1Klines, ticker, levels] =
-            await Promise.all([
-              fetchKlines(symbol, "1d"),
-              fetchKlines(symbol, "4h"),
-              fetchKlines(symbol, "1h"),
-              fetch24hTicker(symbol),
-              fetchSupportResistanceLevels(symbol.slice(0, -4)),
-            ]);
+          const [
+            dailyKlines,
+            weeklyKlines,
+            h4Klines,
+            h1Klines,
+            ticker,
+            levels,
+          ] = await Promise.all([
+            fetchKlines(symbol, "1d"),
+            fetchKlines(symbol, "1w"),
+            fetchKlines(symbol, "4h"),
+            fetchKlines(symbol, "1h"),
+            fetch24hTicker(symbol),
+            fetchSupportResistanceLevels(symbol.slice(0, -4)),
+          ]);
 
           if (
             !dailyKlines.length ||
+            !weeklyKlines.length ||
             !h4Klines.length ||
             !h1Klines.length ||
             !ticker
@@ -297,10 +311,17 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             close: parseFloat(candle[4]),
           }));
 
+          // Get the previous week's closing price
+          const previousWeekClose = parseFloat(
+            weeklyKlines[weeklyKlines.length - 2][4],
+          );
+
           return {
             id: symbol.toLowerCase(),
             symbol: symbol.slice(0, -4) + "/" + symbol.slice(-4),
             price: parseFloat(ticker.lastPrice),
+            previousClose: parseFloat(ticker.prevClosePrice),
+            previousWeekClose,
             change24h: parseFloat(ticker.priceChangePercent),
             volume: parseFloat(ticker.volume),
             rsi,

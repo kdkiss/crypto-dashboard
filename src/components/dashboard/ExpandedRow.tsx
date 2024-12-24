@@ -20,6 +20,8 @@ interface ExpandedRowProps {
   symbol?: string;
   price?: number;
   change24h?: number;
+  previousClose?: number;
+  previousWeekClose?: number;
   rsi?: {
     daily: number;
     h4: number;
@@ -135,6 +137,8 @@ const ExpandedRow = ({
   symbol = "BTC/USD",
   price = 45000,
   change24h = 2.5,
+  previousClose = 44000,
+  previousWeekClose = 43500,
   rsi = { daily: 65, h4: 55, h1: 45 },
   macd = {
     daily: {
@@ -203,9 +207,32 @@ const ExpandedRow = ({
           <div className="space-y-1">
             <h3 className="text-2xl font-bold">{symbol}</h3>
             <div className="flex space-x-2">
-              <Badge variant={change24h >= 0 ? "default" : "destructive"}>
+              <Badge
+                className={
+                  change24h >= 0 ? "bg-green-500 hover:bg-green-600" : ""
+                }
+              >
                 {change24h >= 0 ? "+" : ""}
                 {change24h}%
+              </Badge>
+              <Badge variant="outline">
+                Daily Close: ${formatPrice(previousClose)}
+                <span className="ml-1 text-xs">
+                  (
+                  {(((price - previousClose) / previousClose) * 100).toFixed(2)}
+                  %)
+                </span>
+              </Badge>
+              <Badge variant="outline">
+                Weekly Close: ${formatPrice(previousWeekClose)}
+                <span className="ml-1 text-xs">
+                  (
+                  {(
+                    ((price - previousWeekClose) / previousWeekClose) *
+                    100
+                  ).toFixed(2)}
+                  %)
+                </span>
               </Badge>
               <Badge variant="outline">
                 Volume: ${volume.toLocaleString()}
