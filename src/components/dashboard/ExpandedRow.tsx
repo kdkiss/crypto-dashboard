@@ -72,40 +72,37 @@ const RSIIndicator = ({ value, label }: { value: number; label: string }) => (
     <h4 className="font-medium">{label}</h4>
     <div className="text-xl">{value.toFixed(2)}</div>
     <Badge
-      variant={
-        value > 70 ? "destructive" : value < 30 ? "default" : "secondary"
-      }
+      style={{
+        backgroundColor:
+          value > 70
+            ? "hsl(var(--destructive))"
+            : value < 30
+            ? "hsl(var(--bullish))"
+            : "hsl(var(--muted))",
+        color: value > 70 || value < 30 ? "hsl(var(--foreground))" : "inherit",
+      }}
     >
-      {value.toFixed(2)} -{" "}
-      {value > 70 ? "Overbought" : value < 30 ? "Oversold" : "Neutral"}
+      {value.toFixed(2)} - {value > 70 ? "Overbought" : value < 30 ? "Oversold" : "Neutral"}
     </Badge>
   </div>
 );
 
-const MACDIndicator = ({
-  data,
-  label,
-}: {
-  data: MACDResult;
-  label: string;
-}) => (
+const MACDIndicator = ({ data, label }: { data: MACDResult; label: string }) => (
   <div className="space-y-1">
     <h4 className="font-medium">{label}</h4>
-    <Badge variant={data.trend === "Bullish" ? "default" : "destructive"}>
+    <Badge
+      style={{
+        backgroundColor:
+          data.trend === "Bullish" ? "hsl(var(--bullish))" : "hsl(var(--destructive))",
+        
+      }}
+    >
       {data.crossType || data.trend}
     </Badge>
   </div>
 );
 
-const StochasticIndicator = ({
-  k,
-  d,
-  signal,
-}: {
-  k: number;
-  d: number;
-  signal: "Buy" | "Sell" | null;
-}) => (
+const StochasticIndicator = ({ k, d, signal }: { k: number; d: number; signal: "Buy" | "Sell" | null }) => (
   <div className="space-y-2">
     <h4 className="font-medium">Stochastic Daily (14,3,3)</h4>
     <div className="flex space-x-4">
@@ -120,12 +117,26 @@ const StochasticIndicator = ({
     </div>
     <div className="flex items-center space-x-2">
       <Badge
-        variant={k > 80 ? "destructive" : k < 20 ? "default" : "secondary"}
+        style={{
+          backgroundColor:
+            k > 80
+              ? "hsl(var(--destructive))"
+              : k < 20
+              ? "hsl(var(--bullish))"
+              : "hsl(var(--muted))",
+          
+        }}
       >
         {k > 80 ? "Overbought" : k < 20 ? "Oversold" : "Neutral"}
       </Badge>
       {signal && (
-        <Badge variant={signal === "Buy" ? "default" : "destructive"}>
+        <Badge
+          style={{
+            backgroundColor:
+              signal === "Buy" ? "hsl(var(--bullish))" : "hsl(var(--destructive))",
+            
+          }}
+        >
           {signal} Signal
         </Badge>
       )}
@@ -179,9 +190,7 @@ const ExpandedRow = ({
 }: ExpandedRowProps) => {
   const sortedLevels = [...levels].sort((a, b) => a.level - b.level);
   const currentPrice = price;
-  const nearestSupport = sortedLevels
-    .reverse()
-    .find((l) => l.level < currentPrice);
+  const nearestSupport = sortedLevels.reverse().find((l) => l.level < currentPrice);
   const nearestResistance = sortedLevels.find((l) => l.level > currentPrice);
 
   const CustomTooltip = ({ active, payload }: any) => {
@@ -208,32 +217,42 @@ const ExpandedRow = ({
             <h3 className="text-2xl font-bold">{symbol}</h3>
             <div className="flex space-x-2">
               <Badge
-                className={
-                  change24h >= 0 ? "bg-green-500 hover:bg-green-600" : ""
-                }
+                style={{
+                  backgroundColor:
+                    change24h >= 0 ? "hsl(var(--bullish))" : "hsl(var(--destructive))",
+                  
+                }}
               >
                 {change24h >= 0 ? "+" : ""}
                 {change24h}%
               </Badge>
-              <Badge variant="outline">
+              <Badge
+                variant="outline"
+                className={`${
+                  price >= previousClose ? "bg-green-500 text-black" : "bg-red-500 text-black"
+                } border-none`}
+              >
                 Daily Close: ${formatPrice(previousClose)}
                 <span className="ml-1 text-xs">
                   (
-                  {(((price - previousClose) / previousClose) * 100).toFixed(2)}
-                  %)
+                  {(((price - previousClose) / previousClose) * 100).toFixed(2)}%)
                 </span>
               </Badge>
-              <Badge variant="outline">
+
+
+              <Badge
+                variant="outline"
+                className={`${
+                  price >= previousWeekClose ? "bg-green-500 text-black" : "bg-red-500 text-black"
+                } border-none`}
+              >
                 Weekly Close: ${formatPrice(previousWeekClose)}
                 <span className="ml-1 text-xs">
                   (
-                  {(
-                    ((price - previousWeekClose) / previousWeekClose) *
-                    100
-                  ).toFixed(2)}
-                  %)
+                  {(((price - previousWeekClose) / previousWeekClose) * 100).toFixed(2)}%)
                 </span>
               </Badge>
+
               <Badge variant="outline">
                 Volume: ${volume.toLocaleString()}
               </Badge>
@@ -304,7 +323,9 @@ const ExpandedRow = ({
                   <h4 className="font-medium">Nearest Support</h4>
                   <div className="text-xl text-green-500">
                     $
-                    {nearestSupport ? formatPrice(nearestSupport.level) : "N/A"}
+                    {nearestSupport
+                      ? formatPrice(nearestSupport.level)
+                      : "N/A"}
                   </div>
                   {nearestSupport && (
                     <Badge variant="outline">{nearestSupport.date}</Badge>

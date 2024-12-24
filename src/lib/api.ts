@@ -56,6 +56,8 @@ const SYMBOLS = [
   "LINKUSDT",
   "ENAUSDT",
   "BONKUSDT",
+  "AVAXUSDT",
+  "TONUSDT",
 ];
 
 const defaultData: CryptoData[] = [

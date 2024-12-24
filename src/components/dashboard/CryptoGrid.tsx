@@ -206,7 +206,7 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
             <TableHead>Price</TableHead>
             <TableHead>24h Change</TableHead>
             <TableHead>RSI (1H)</TableHead>
-            <TableHead>MACD</TableHead>
+            <TableHead>MACD (D)</TableHead>
             <TableHead>Volume</TableHead>
           </TableRow>
         </TableHeader>
@@ -232,16 +232,21 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                   {crypto.price < 0.01
                     ? crypto.price.toFixed(8)
                     : crypto.price < 1
-                      ? crypto.price.toFixed(4)
-                      : crypto.price.toLocaleString()}
+                    ? crypto.price.toFixed(4)
+                    : crypto.price.toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <Badge
-                    className={
-                      crypto.change24h >= 0
-                        ? "bg-green-500 hover:bg-green-600"
-                        : ""
-                    }
+                    style={{
+                      backgroundColor:
+                        crypto.change24h >= 0
+                          ? "hsl(var(--bullish))"
+                          : "hsl(var(--destructive))",
+                      color:
+                        crypto.change24h >= 0
+                          ? "hsl(var(--bullish-foreground))"
+                          : "hsl(var(--destructive-foreground))",
+                    }}
                   >
                     {crypto.change24h >= 0 ? "+" : ""}
                     {crypto.change24h}%
@@ -249,12 +254,12 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={
+                    className={
                       crypto.rsi.h1 > 70
-                        ? "destructive"
+                        ? "bg-red-500 text-white"
                         : crypto.rsi.h1 < 30
-                          ? "default"
-                          : "secondary"
+                        ? "bg-blue-300 text-black"
+                        : "bg-gray-300 text-black"
                     }
                   >
                     {crypto.rsi.h1.toFixed(2)}
@@ -262,10 +267,10 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 </TableCell>
                 <TableCell>
                   <Badge
-                    variant={
+                    className={
                       crypto.macd.daily.trend === "Bullish"
-                        ? "default"
-                        : "destructive"
+                        ? "bg-blue-300 text-black"
+                        : "bg-red-500 text-white"
                     }
                   >
                     {crypto.macd.daily.crossType || crypto.macd.daily.trend}
