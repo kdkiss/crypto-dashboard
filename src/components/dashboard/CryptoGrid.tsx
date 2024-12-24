@@ -224,7 +224,14 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                   )}
                 </TableCell>
                 <TableCell className="font-medium">{crypto.symbol}</TableCell>
-                <TableCell>${crypto.price.toLocaleString()}</TableCell>
+                <TableCell>
+                  $
+                  {crypto.price < 0.01
+                    ? crypto.price.toFixed(8)
+                    : crypto.price < 1
+                      ? crypto.price.toFixed(4)
+                      : crypto.price.toLocaleString()}
+                </TableCell>
                 <TableCell>
                   <Badge
                     variant={crypto.change24h >= 0 ? "default" : "destructive"}

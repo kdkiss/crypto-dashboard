@@ -59,6 +59,12 @@ const defaultChartData = Array.from({ length: 24 }, (_, i) => ({
   close: Math.random() * 1000 + 20000,
 }));
 
+const formatPrice = (price: number) => {
+  if (price < 0.01) return price.toFixed(8);
+  if (price < 1) return price.toFixed(4);
+  return price.toLocaleString();
+};
+
 const RSIIndicator = ({ value, label }: { value: number; label: string }) => (
   <div className="space-y-1">
     <h4 className="font-medium">{label}</h4>
@@ -180,10 +186,10 @@ const ExpandedRow = ({
       return (
         <div className="bg-background border rounded p-2 shadow-lg">
           <p className="text-sm font-medium">{data.timestamp}</p>
-          <p className="text-sm">Open: ${data.open?.toLocaleString()}</p>
-          <p className="text-sm">High: ${data.high?.toLocaleString()}</p>
-          <p className="text-sm">Low: ${data.low?.toLocaleString()}</p>
-          <p className="text-sm">Close: ${data.close?.toLocaleString()}</p>
+          <p className="text-sm">Open: ${formatPrice(data.open)}</p>
+          <p className="text-sm">High: ${formatPrice(data.high)}</p>
+          <p className="text-sm">Low: ${formatPrice(data.low)}</p>
+          <p className="text-sm">Close: ${formatPrice(data.close)}</p>
         </div>
       );
     }
@@ -207,7 +213,7 @@ const ExpandedRow = ({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-3xl font-bold">${price.toLocaleString()}</div>
+            <div className="text-3xl font-bold">${formatPrice(price)}</div>
           </div>
         </div>
 
@@ -260,7 +266,7 @@ const ExpandedRow = ({
                   <div className="text-xl text-destructive">
                     $
                     {nearestResistance
-                      ? nearestResistance.level.toLocaleString()
+                      ? formatPrice(nearestResistance.level)
                       : "N/A"}
                   </div>
                   {nearestResistance && (
@@ -271,9 +277,7 @@ const ExpandedRow = ({
                   <h4 className="font-medium">Nearest Support</h4>
                   <div className="text-xl text-green-500">
                     $
-                    {nearestSupport
-                      ? nearestSupport.level.toLocaleString()
-                      : "N/A"}
+                    {nearestSupport ? formatPrice(nearestSupport.level) : "N/A"}
                   </div>
                   {nearestSupport && (
                     <Badge variant="outline">{nearestSupport.date}</Badge>
