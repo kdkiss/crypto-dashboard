@@ -26,7 +26,7 @@ const Home = ({
     const fetchData = async () => {
       try {
         const data = await fetchCryptoData();
-        setCryptoData(data);
+        setCryptoData(data.filter((item): item is CryptoData => Array.isArray(item.chartData)));
       } catch (error) {
         console.error("Error fetching crypto data:", error);
       } finally {
@@ -39,6 +39,8 @@ const Home = ({
 
     return () => clearInterval(interval);
   }, []);
+
+  
 
   const handleFilterChange = (newFilters: typeof initialFilters) => {
     setFilters({ ...filters, ...newFilters });
@@ -75,7 +77,7 @@ const Home = ({
           activeColumns={visibleColumns}
         />
         <div className="flex-1">
-          <CryptoGrid data={cryptoData} />
+          <CryptoGrid data={cryptoData as any} />
         </div>
       </main>
 
