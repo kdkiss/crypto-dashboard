@@ -36,20 +36,22 @@ export function calculateRSI(prices: number[], periods: number = 14): number {
 }
 
 export function calculateEMA(prices: number[], periods: number): number[] {
-  if (prices.length < periods) {
-    throw new Error("Not enough data points to calculate EMA.");
+  const k = 2 / (periods + 1);
+  const ema = new Array(prices.length);
+
+  // Initialize with SMA
+  let sum = 0;
+  for (let i = 0; i < periods; i++) {
+    sum += prices[i];
   }
+  ema[periods - 1] = sum / periods;
 
-  const multiplier = 2 / (periods + 1);
-  const ema = Array(prices.length).fill(0);
-  ema[periods - 1] =
-    prices.slice(0, periods).reduce((sum, price) => sum + price, 0) / periods;
-
+  // Calculate EMA
   for (let i = periods; i < prices.length; i++) {
-    ema[i] = (prices[i] - ema[i - 1]) * multiplier + ema[i - 1];
+    ema[i] = prices[i] * k + ema[i - 1] * (1 - k);
   }
 
-  return ema.slice(periods - 1); // Return only the valid EMA values
+  return ema.slice(periods - 1);
 }
 
 export interface MACDResult {
@@ -73,27 +75,48 @@ export function calculateMACD(
     throw new Error("Not enough data points to calculate MACD.");
   }
 
+  // Calculate EMAs
   const fastEMA = calculateEMA(prices, fastPeriods);
   const slowEMA = calculateEMA(prices, slowPeriods);
-  const macdLine = fastEMA.map((fast, i) => fast - slowEMA[i]);
+
+  // Align arrays to same length
+  const startIndex = slowPeriods - fastPeriods;
+  const alignedFastEMA = fastEMA.slice(startIndex);
+
+  // Calculate MACD line
+  const macdLine = alignedFastEMA.map((fast, i) => fast - slowEMA[i]);
+
+  // Calculate Signal line (9-day EMA of MACD line)
   const signalLine = calculateEMA(macdLine, signalPeriods);
 
-  const histogram = macdLine.map((macd, i) => macd - signalLine[i]);
+  // Calculate histogram
+  const histogram = macdLine
+    .slice(-signalLine.length)
+    .map((macd, i) => macd - signalLine[i]);
 
   // Get the most recent values
   const currentMACD = macdLine[macdLine.length - 1];
   const previousMACD = macdLine[macdLine.length - 2];
   const currentSignal = signalLine[signalLine.length - 1];
   const previousSignal = signalLine[signalLine.length - 2];
-  const currentHistogram = currentMACD - currentSignal;
+  const currentHistogram = histogram[histogram.length - 1];
 
-  // Detect crosses
+  // Detect crosses and trend
   let crossType: "Bullish Cross" | "Bearish Cross" | null = null;
   if (previousMACD < previousSignal && currentMACD > currentSignal) {
     crossType = "Bullish Cross";
   } else if (previousMACD > previousSignal && currentMACD < currentSignal) {
     crossType = "Bearish Cross";
   }
+
+  // Determine trend based on histogram and MACD line slope
+  const trend = (() => {
+    const histogramTrend = currentHistogram > 0;
+    const macdSlope = currentMACD - previousMACD;
+    if (histogramTrend && macdSlope > 0) return "Bullish";
+    if (!histogramTrend && macdSlope < 0) return "Bearish";
+    return currentHistogram > 0 ? "Bullish" : "Bearish";
+  })();
 
   return {
     macdLine,
@@ -102,7 +125,7 @@ export function calculateMACD(
     currentMACD: Number(currentMACD.toFixed(2)),
     currentSignal: Number(currentSignal.toFixed(2)),
     currentHistogram: Number(currentHistogram.toFixed(2)),
-    trend: currentHistogram > 0 ? "Bullish" : "Bearish",
+    trend,
     crossType,
   };
 }
