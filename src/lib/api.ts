@@ -366,6 +366,7 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
 
     // Filter out any failed requests and duplicates
     const validData = cryptoData.filter(
+      // @ts-ignore: Suppress type predicate type check
       (data): data is CryptoData =>
         data !== null && (!data.chartData || Array.isArray(data.chartData)),
     );
