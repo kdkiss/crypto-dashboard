@@ -30,6 +30,11 @@ interface ExpandedRowProps {
     h4: number;
     h1: number;
   };
+  cci?: {
+    daily: number;
+    h4: number;
+    h1: number;
+  };
   macd?: {
     daily: MACDResult;
     h4: MACDResult;
@@ -85,6 +90,24 @@ const RSIIndicator = ({ value, label }: { value: number; label: string }) => (
     >
       {value.toFixed(2)} -{" "}
       {value > 70 ? "Overbought" : value < 30 ? "Oversold" : "Neutral"}
+    </Badge>
+  </div>
+);
+
+const CCIIndicator = ({ value, label }: { value: number; label: string }) => (
+  <div className="space-y-1">
+    <h4 className="font-medium">{label}</h4>
+    <div className="text-xl">{value.toFixed(2)}</div>
+    <Badge
+      className={
+        value > 160
+          ? "bg-red-500 text-white"
+          : value < -160
+          ? "bg-blue-400 text-white"
+          : "bg-gray-300 text-black"
+      }
+    >
+      {value > 160 ? "Overbought" : value < -160 ? "Oversold" : "Neutral"}
     </Badge>
   </div>
 );
@@ -166,6 +189,7 @@ const ExpandedRow = ({
   previousClose = 44000,
   previousWeekClose = 43500,
   rsi = { daily: 65, h4: 55, h1: 45 },
+  cci = { daily: 65, h4: 55, h1: 45},
   macd = {
     daily: {
       trend: "Bullish",
@@ -346,6 +370,11 @@ const ExpandedRow = ({
                 <RSIIndicator value={rsi.daily} label="RSI (Daily)" />
                 <RSIIndicator value={rsi.h4} label="RSI (4H)" />
                 <RSIIndicator value={rsi.h1} label="RSI (1H)" />
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <CCIIndicator value={cci.daily} label="CCI (Daily)" />
+                <CCIIndicator value={cci.h4} label="CCI (4H)" />
+                <CCIIndicator value={cci.h1} label="CCI (1H)" />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <MACDIndicator data={macd.daily} label="MACD (Daily)" />
