@@ -2,9 +2,9 @@ import {
   calculateRSI,
   calculateMACD,
   calculateStochastic,
-  calculateCCI,
   type MACDResult,
 } from "./indicators";
+import { calculateCCIFromLibrary } from "@/lib/indicators";
 
 const BINANCE_REST_URL = "https://api.binance.com/api/v3";
 const TM_API_KEY = "tm-c20bcf38-0000-43f4-ba11-abc3fe6dc00f";
@@ -339,11 +339,23 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             h1: calculateRSI(h1Prices),
           };
 
+          
+
           const cci = {
-            daily: calculateCCI({ high: dailyHighs, low: dailyLows, close: dailyCloses }, 20).pop() || NaN,
-            h4: calculateCCI({ high: h4Highs, low: h4Lows, close: h4Closes }, 20).pop() || NaN,
-            h1: calculateCCI({ high: h1Highs, low: h1Lows, close: h1Closes }, 20).pop() || NaN,
+            daily: calculateCCIFromLibrary(
+              { high: dailyHighs, low: dailyLows, close: dailyCloses },
+              20 // Period
+            ).pop() || NaN,
+            h4: calculateCCIFromLibrary(
+              { high: h4Highs, low: h4Lows, close: h4Closes },
+              20
+            ).pop() || NaN,
+            h1: calculateCCIFromLibrary(
+              { high: h1Highs, low: h1Lows, close: h1Closes },
+              20
+            ).pop() || NaN,
           };
+
 
 
           // Calculate MACD for different timeframes
