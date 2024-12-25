@@ -232,21 +232,16 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                   {crypto.price < 0.01
                     ? crypto.price.toFixed(8)
                     : crypto.price < 1
-                    ? crypto.price.toFixed(4)
-                    : crypto.price.toLocaleString()}
+                      ? crypto.price.toFixed(4)
+                      : crypto.price.toLocaleString()}
                 </TableCell>
                 <TableCell>
                   <Badge
-                    style={{
-                      backgroundColor:
-                        crypto.change24h >= 0
-                          ? "hsl(var(--bullish))"
-                          : "hsl(var(--destructive))",
-                      color:
-                        crypto.change24h >= 0
-                          ? "hsl(var(--bullish-foreground))"
-                          : "hsl(var(--destructive-foreground))",
-                    }}
+                    className={
+                      crypto.change24h >= 0
+                        ? "bg-blue-400 hover:bg-blue-500 text-white"
+                        : "bg-red-500 hover:bg-red-600 text-white"
+                    }
                   >
                     {crypto.change24h >= 0 ? "+" : ""}
                     {crypto.change24h}%
@@ -258,8 +253,8 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                       crypto.rsi.h1 > 70
                         ? "bg-red-500 text-white"
                         : crypto.rsi.h1 < 30
-                        ? "bg-blue-300 text-black"
-                        : "bg-gray-300 text-black"
+                          ? "bg-blue-400 text-white"
+                          : "bg-gray-300 text-black"
                     }
                   >
                     {crypto.rsi.h1.toFixed(2)}
@@ -269,7 +264,7 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                   <Badge
                     className={
                       crypto.macd.daily.trend === "Bullish"
-                        ? "bg-blue-300 text-black"
+                        ? "bg-blue-400 text-white"
                         : "bg-red-500 text-white"
                     }
                   >
