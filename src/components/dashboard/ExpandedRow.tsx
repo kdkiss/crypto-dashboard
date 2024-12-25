@@ -100,14 +100,14 @@ const CCIIndicator = ({ value, label }: { value: number; label: string }) => (
     <div className="text-xl">{value.toFixed(2)}</div>
     <Badge
       className={
-        value > 160
+        value > 120
           ? "bg-red-500 text-white"
-          : value < -160
+          : value < -120
           ? "bg-blue-400 text-white"
           : "bg-gray-300 text-black"
       }
     >
-      {value > 160 ? "Overbought" : value < -160 ? "Oversold" : "Neutral"}
+      {value > 120 ? "Overbought" : value < -120 ? "Oversold" : "Neutral"}
     </Badge>
   </div>
 );
