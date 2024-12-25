@@ -2,6 +2,7 @@ import {
   calculateRSI,
   calculateMACD,
   calculateStochastic,
+  calculateCCI,
   type MACDResult,
 } from "./indicators";
 
@@ -16,6 +17,11 @@ export interface CryptoData {
   previousWeekClose: number;
   change24h: number;
   rsi?: {
+    daily: number;
+    h4: number;
+    h1: number;
+  };
+  cci?: {
     daily: number;
     h4: number;
     h1: number;
@@ -90,6 +96,11 @@ const defaultData: CryptoData[] = [
     previousWeekClose: 43500,
     change24h: 2.5,
     rsi: {
+      daily: 65,
+      h4: 55,
+      h1: 45,
+    },
+    cci: {
       daily: 65,
       h4: 55,
       h1: 45,
@@ -309,11 +320,31 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
           const h4Prices = h4Klines.map((candle) => parseFloat(candle[4]));
           const h1Prices = h1Klines.map((candle) => parseFloat(candle[4]));
 
+          const dailyHighs = dailyKlines.map((candle) => parseFloat(candle[2]));
+          const dailyLows = dailyKlines.map((candle) => parseFloat(candle[3]));
+          const dailyCloses = dailyKlines.map((candle) => parseFloat(candle[4]));
+
+          const h4Highs = h4Klines.map((candle) => parseFloat(candle[2]));
+          const h4Lows = h4Klines.map((candle) => parseFloat(candle[3]));
+          const h4Closes = h4Klines.map((candle) => parseFloat(candle[4]));
+
+          const h1Highs = h1Klines.map((candle) => parseFloat(candle[2]));
+          const h1Lows = h1Klines.map((candle) => parseFloat(candle[3]));
+          const h1Closes = h1Klines.map((candle) => parseFloat(candle[4]));
+
+
           const rsi = {
             daily: calculateRSI(dailyPrices),
             h4: calculateRSI(h4Prices),
             h1: calculateRSI(h1Prices),
           };
+
+          const cci = {
+            daily: calculateCCI({ high: dailyHighs, low: dailyLows, close: dailyCloses }, 20).pop() || NaN,
+            h4: calculateCCI({ high: h4Highs, low: h4Lows, close: h4Closes }, 20).pop() || NaN,
+            h1: calculateCCI({ high: h1Highs, low: h1Lows, close: h1Closes }, 20).pop() || NaN,
+          };
+
 
           // Calculate MACD for different timeframes
           const macd = {
@@ -351,6 +382,7 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             previousWeekClose,
             change24h: parseFloat(ticker.priceChangePercent),
             volume: parseFloat(ticker.volume),
+            cci,
             rsi,
             macd,
             stochastic,
