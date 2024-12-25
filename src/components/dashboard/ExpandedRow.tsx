@@ -1,5 +1,6 @@
 import React from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   LineChart,
@@ -15,9 +16,11 @@ import {
 } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { MACDResult } from "@/lib/indicators";
+import { X } from "lucide-react";
 
 interface ExpandedRowProps {
   symbol?: string;
+  onRemoveSymbol?: (symbol: string) => void;
   price?: number;
   change24h?: number;
   previousClose?: number;
@@ -157,6 +160,7 @@ const StochasticIndicator = ({
 
 const ExpandedRow = ({
   symbol = "BTC/USD",
+  onRemoveSymbol,
   price = 45000,
   change24h = 2.5,
   previousClose = 44000,
@@ -199,12 +203,28 @@ const ExpandedRow = ({
   chartData = defaultChartData,
   levels = [],
 }: ExpandedRowProps) => {
-  const sortedLevels = [...levels].sort((a, b) => a.level - b.level);
+  // Find nearest levels by comparing distance to current price
+  const findNearestLevels = (
+    price: number,
+    levels: Array<{ date: string; level: number }>,
+  ) => {
+    const sortedByDistance = [...levels].sort((a, b) => {
+      const distA = Math.abs(a.level - price);
+      const distB = Math.abs(b.level - price);
+      return distA - distB;
+    });
+
+    // Get nearest resistance (above current price)
+    const resistance = sortedByDistance.find((l) => l.level > price);
+    // Get nearest support (below current price)
+    const support = sortedByDistance.find((l) => l.level < price);
+
+    return { resistance, support };
+  };
+
   const currentPrice = price;
-  const nearestSupport = sortedLevels
-    .reverse()
-    .find((l) => l.level < currentPrice);
-  const nearestResistance = sortedLevels.find((l) => l.level > currentPrice);
+  const { resistance: nearestResistance, support: nearestSupport } =
+    findNearestLevels(currentPrice, levels);
 
   const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
@@ -222,12 +242,27 @@ const ExpandedRow = ({
     return null;
   };
 
+  const isDefaultSymbol = symbol === "BTC/USDT" || symbol === "ETH/USDT";
+
   return (
     <Card className="p-6 bg-background border rounded-lg w-full">
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div className="space-y-1">
-            <h3 className="text-2xl font-bold">{symbol}</h3>
+            <div className="flex items-center gap-4">
+              <h3 className="text-2xl font-bold">{symbol}</h3>
+              {onRemoveSymbol && !isDefaultSymbol && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onRemoveSymbol(symbol)}
+                  className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Remove
+                </Button>
+              )}
+            </div>
             <div className="flex space-x-2">
               <Badge
                 className={

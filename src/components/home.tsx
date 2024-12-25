@@ -1,7 +1,13 @@
 import React from "react";
 import FilterBar from "@/components/dashboard/FilterBar";
 import CryptoGrid from "@/components/dashboard/CryptoGrid";
-import { fetchCryptoData, type CryptoData } from "@/lib/api";
+import {
+  fetchCryptoData,
+  type CryptoData,
+  addSymbol,
+  removeSymbol,
+} from "@/lib/api";
+import { SymbolManager } from "@/components/dashboard/SymbolManager";
 
 interface HomeProps {
   initialFilters?: {
@@ -22,25 +28,38 @@ const Home = ({
   const [cryptoData, setCryptoData] = React.useState<CryptoData[]>([]);
   const [loading, setLoading] = React.useState(true);
 
-  React.useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const data = await fetchCryptoData();
-        setCryptoData(data.filter((item): item is CryptoData => Array.isArray(item.chartData)));
-      } catch (error) {
-        console.error("Error fetching crypto data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const handleAddSymbol = (symbol: string) => {
+    addSymbol(symbol);
+    // Trigger a data refresh
+    fetchData();
+  };
 
+  const handleRemoveSymbol = (symbol: string) => {
+    removeSymbol(symbol);
+    // Trigger a data refresh
+    fetchData();
+  };
+
+  const fetchData = async () => {
+    try {
+      const data = await fetchCryptoData();
+      setCryptoData(
+        data.filter((item): item is CryptoData =>
+          Array.isArray(item.chartData),
+        ),
+      );
+    } catch (error) {
+      console.error("Error fetching crypto data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
     fetchData();
     const interval = setInterval(fetchData, 30000); // Update every 30 seconds
-
     return () => clearInterval(interval);
-  }, []);
-
-  
+  }, []); // Only run on mount
 
   const handleFilterChange = (newFilters: typeof initialFilters) => {
     setFilters({ ...filters, ...newFilters });
@@ -71,13 +90,16 @@ const Home = ({
       </header>
 
       <main className="flex-1 container mx-auto flex flex-col">
-        <FilterBar
-          onFilterChange={handleFilterChange}
-          onColumnToggle={handleColumnToggle}
-          activeColumns={visibleColumns}
-        />
+        <div className="py-4 flex justify-between items-center">
+          <FilterBar
+            onFilterChange={handleFilterChange}
+            onColumnToggle={handleColumnToggle}
+            activeColumns={visibleColumns}
+          />
+          <SymbolManager onAddSymbol={handleAddSymbol} />
+        </div>
         <div className="flex-1">
-          <CryptoGrid data={cryptoData as any} />
+          <CryptoGrid data={cryptoData} onRemoveSymbol={handleRemoveSymbol} />
         </div>
       </main>
 

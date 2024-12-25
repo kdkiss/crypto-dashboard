@@ -15,17 +15,17 @@ export interface CryptoData {
   previousClose: number;
   previousWeekClose: number;
   change24h: number;
-  rsi: {
+  rsi?: {
     daily: number;
     h4: number;
     h1: number;
   };
-  macd: {
+  macd?: {
     daily: MACDResult;
     h4: MACDResult;
     h1: MACDResult;
   };
-  stochastic: {
+  stochastic?: {
     k: number;
     d: number;
     signal: "Buy" | "Sell" | null;
@@ -45,19 +45,41 @@ export interface CryptoData {
   }>;
 }
 
-const SYMBOLS = [
-  "BTCUSDT",
-  "ETHUSDT",
-  "SOLUSDT",
-  "BNBUSDT",
-  "XRPUSDT",
-  "TAOUSDT",
-  "AAVEUSDT",
-  "LINKUSDT",
-  "ENAUSDT",
-  "BONKUSDT",
-  "TONUSDT",
-];
+// Keep track of active symbols
+let activeSymbols = new Set([
+  "BTC/USDT",
+  "ETH/USDT",
+  "SOL/USDT",
+  "BNB/USDT",
+  "XRP/USDT",
+  "TAO/USDT",
+  "AAVE/USDT",
+  "LINK/USDT",
+  "ENA/USDT",
+  "BONK/USDT",
+  "TON/USDT",
+]);
+
+// Format symbol for display (with slash)
+const formatSymbolForDisplay = (symbol: string) =>
+  symbol.includes("/") ? symbol : `${symbol.slice(0, -4)}/${symbol.slice(-4)}`;
+
+// Format symbol for API calls (without slash)
+const formatSymbolForAPI = (symbol: string) => symbol.replace("/", "");
+
+// Export functions to manage symbols
+export const addSymbol = (symbol: string) => {
+  const formattedSymbol = formatSymbolForDisplay(symbol);
+  activeSymbols.add(symbol.includes("/") ? symbol : formattedSymbol);
+};
+
+export const removeSymbol = (symbol: string) => {
+  activeSymbols.delete(symbol);
+};
+
+// Get active symbols in display format
+export const getActiveSymbols = () =>
+  Array.from(activeSymbols).map(formatSymbolForDisplay);
 
 const defaultData: CryptoData[] = [
   {
@@ -194,8 +216,9 @@ const defaultData: CryptoData[] = [
 
 async function fetchKlines(symbol: string, interval: string): Promise<any[]> {
   try {
+    const formattedSymbol = formatSymbolForAPI(symbol);
     const response = await fetch(
-      `${BINANCE_REST_URL}/klines?symbol=${symbol}&interval=${interval}&limit=100`,
+      `${BINANCE_REST_URL}/klines?symbol=${formattedSymbol}&interval=${interval}&limit=100`,
     );
     const data = await response.json();
     return data;
@@ -207,8 +230,9 @@ async function fetchKlines(symbol: string, interval: string): Promise<any[]> {
 
 async function fetch24hTicker(symbol: string): Promise<any> {
   try {
+    const formattedSymbol = formatSymbolForAPI(symbol);
     const response = await fetch(
-      `${BINANCE_REST_URL}/ticker/24hr?symbol=${symbol}`,
+      `${BINANCE_REST_URL}/ticker/24hr?symbol=${formattedSymbol}`,
     );
     const data = await response.json();
     return data;
@@ -220,8 +244,9 @@ async function fetch24hTicker(symbol: string): Promise<any> {
 
 async function fetchSupportResistanceLevels(symbol: string): Promise<any[]> {
   try {
+    const baseSymbol = symbol.split("/")[0];
     const response = await fetch(
-      `https://api.tokenmetrics.com/v2/resistance-support?symbol=${symbol}&limit=1000&page=0`,
+      `https://api.tokenmetrics.com/v2/resistance-support?symbol=${baseSymbol}&limit=1000&page=0`,
       {
         headers: {
           accept: "application/json",
@@ -247,8 +272,9 @@ async function fetchSupportResistanceLevels(symbol: string): Promise<any[]> {
 
 export async function fetchCryptoData(): Promise<CryptoData[]> {
   try {
+    const symbols = getActiveSymbols();
     const cryptoData = await Promise.all(
-      SYMBOLS.map(async (symbol) => {
+      symbols.map(async (symbol) => {
         try {
           const [
             dailyKlines,
@@ -263,7 +289,7 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
             fetchKlines(symbol, "4h"),
             fetchKlines(symbol, "1h"),
             fetch24hTicker(symbol),
-            fetchSupportResistanceLevels(symbol.slice(0, -4)),
+            fetchSupportResistanceLevels(symbol),
           ]);
 
           if (
@@ -318,8 +344,8 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
           );
 
           return {
-            id: symbol.toLowerCase(),
-            symbol: symbol.slice(0, -4) + "/" + symbol.slice(-4),
+            id: symbol.replace("/", "").toLowerCase(),
+            symbol,
             price: parseFloat(ticker.lastPrice),
             previousClose: parseFloat(ticker.prevClosePrice),
             previousWeekClose,
@@ -340,8 +366,8 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
 
     // Filter out any failed requests and duplicates
     const validData = cryptoData.filter(
-      // @ts-ignore: Suppress type predicate incompatibility
-      (data): data is CryptoData => data !== null && (!data.chartData || Array.isArray(data.chartData))
+      (data): data is CryptoData =>
+        data !== null && (!data.chartData || Array.isArray(data.chartData)),
     );
     const uniqueData = validData.filter(
       (data, index, self) => index === self.findIndex((d) => d.id === data.id),
@@ -356,9 +382,9 @@ export async function fetchCryptoData(): Promise<CryptoData[]> {
 
 export async function fetchCoinHistory(symbol: string): Promise<any> {
   try {
-    const formattedSymbol = symbol.replace("/", "");
+    const formattedSymbol = formatSymbolForAPI(symbol);
     const [klines, levels] = await Promise.all([
-      fetchKlines(formattedSymbol, "1h"),
+      fetchKlines(symbol, "1h"),
       fetchSupportResistanceLevels(symbol.split("/")[0]),
     ]);
 

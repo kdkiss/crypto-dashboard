@@ -10,76 +10,20 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import ExpandedRow from "./ExpandedRow";
-
-interface CryptoData {
-  id: string;
-  symbol: string;
-  price: number;
-  previousClose?: number;
-  change24h: number;
-  rsi: {
-    daily: number;
-    h4: number;
-    h1: number;
-  };
-  macd: {
-    daily: {
-      trend: "Bullish" | "Bearish";
-      crossType: "Bullish Cross" | "Bearish Cross" | null;
-      currentMACD: number;
-      currentSignal: number;
-      currentHistogram: number;
-      macdLine: number[];
-      signalLine: number[];
-      histogram: number[];
-    };
-    h4: {
-      trend: "Bullish" | "Bearish";
-      crossType: "Bullish Cross" | "Bearish Cross" | null;
-      currentMACD: number;
-      currentSignal: number;
-      currentHistogram: number;
-      macdLine: number[];
-      signalLine: number[];
-      histogram: number[];
-    };
-    h1: {
-      trend: "Bullish" | "Bearish";
-      crossType: "Bullish Cross" | "Bearish Cross" | null;
-      currentMACD: number;
-      currentSignal: number;
-      currentHistogram: number;
-      macdLine: number[];
-      signalLine: number[];
-      histogram: number[];
-    };
-  };
-  stochastic: {
-    k: number;
-    d: number;
-    signal: "Buy" | "Sell" | null;
-  };
-  volume: number;
-  chartData: Array<{
-    timestamp: string;
-    price: number;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-  }>;
-}
+import { CryptoData } from "@/lib/api";
 
 interface CryptoGridProps {
   data?: CryptoData[];
+  onRemoveSymbol?: (symbol: string) => void;
 }
 
 const defaultData: CryptoData[] = [
   {
-    id: "1",
-    symbol: "BTC/USD",
+    id: "btcusdt",
+    symbol: "BTC/USDT",
     price: 45000,
     previousClose: 44000,
+    previousWeekClose: 43500,
     change24h: 2.5,
     rsi: {
       daily: 65,
@@ -133,67 +77,12 @@ const defaultData: CryptoData[] = [
       close: Math.random() * 1000 + 44000,
     })),
   },
-  {
-    id: "2",
-    symbol: "ETH/USD",
-    price: 2800,
-    previousClose: 2850,
-    change24h: -1.2,
-    rsi: {
-      daily: 45,
-      h4: 52,
-      h1: 48,
-    },
-    macd: {
-      daily: {
-        trend: "Bearish",
-        crossType: "Bearish Cross",
-        currentMACD: -45.2,
-        currentSignal: -32.5,
-        currentHistogram: -12.7,
-        macdLine: [],
-        signalLine: [],
-        histogram: [],
-      },
-      h4: {
-        trend: "Bearish",
-        crossType: null,
-        currentMACD: -25.4,
-        currentSignal: -15.2,
-        currentHistogram: -10.2,
-        macdLine: [],
-        signalLine: [],
-        histogram: [],
-      },
-      h1: {
-        trend: "Bearish",
-        crossType: null,
-        currentMACD: -15.6,
-        currentSignal: -8.4,
-        currentHistogram: -7.2,
-        macdLine: [],
-        signalLine: [],
-        histogram: [],
-      },
-    },
-    stochastic: {
-      k: 85,
-      d: 82,
-      signal: "Sell",
-    },
-    volume: 500000,
-    chartData: Array.from({ length: 24 }, (_, i) => ({
-      timestamp: `${i}:00`,
-      price: Math.random() * 100 + 2750,
-      open: Math.random() * 100 + 2750,
-      high: Math.random() * 100 + 2850,
-      low: Math.random() * 100 + 2650,
-      close: Math.random() * 100 + 2750,
-    })),
-  },
 ];
 
-const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
+const CryptoGrid = ({
+  data = defaultData,
+  onRemoveSymbol,
+}: CryptoGridProps) => {
   const [expandedRow, setExpandedRow] = useState<string | null>(null);
 
   return (
@@ -250,25 +139,27 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 <TableCell>
                   <Badge
                     className={
-                      crypto.rsi.h1 > 70
+                      crypto.rsi?.h1 > 70
                         ? "bg-red-500 text-white"
-                        : crypto.rsi.h1 < 30
+                        : crypto.rsi?.h1 < 30
                           ? "bg-blue-400 text-white"
                           : "bg-gray-300 text-black"
                     }
                   >
-                    {crypto.rsi.h1.toFixed(2)}
+                    {crypto.rsi?.h1.toFixed(2) ?? "N/A"}
                   </Badge>
                 </TableCell>
                 <TableCell>
                   <Badge
                     className={
-                      crypto.macd.daily.trend === "Bullish"
+                      crypto.macd?.daily.trend === "Bullish"
                         ? "bg-blue-400 text-white"
                         : "bg-red-500 text-white"
                     }
                   >
-                    {crypto.macd.daily.crossType || crypto.macd.daily.trend}
+                    {crypto.macd?.daily.crossType ||
+                      crypto.macd?.daily.trend ||
+                      "N/A"}
                   </Badge>
                 </TableCell>
                 <TableCell>${crypto.volume.toLocaleString()}</TableCell>
@@ -277,7 +168,10 @@ const CryptoGrid = ({ data = defaultData }: CryptoGridProps) => {
                 <TableRow>
                   <TableCell colSpan={7} className="p-0">
                     <div className="p-4">
-                      <ExpandedRow {...crypto} />
+                      <ExpandedRow
+                        {...crypto}
+                        onRemoveSymbol={onRemoveSymbol}
+                      />
                     </div>
                   </TableCell>
                 </TableRow>
