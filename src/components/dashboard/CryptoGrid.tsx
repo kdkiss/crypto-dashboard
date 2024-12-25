@@ -94,7 +94,7 @@ const CryptoGrid = ({
             <TableHead>Symbol</TableHead>
             <TableHead>Price</TableHead>
             <TableHead>24h Change</TableHead>
-            <TableHead>RSI (1H)</TableHead>
+            <TableHead>RSI (D)</TableHead>
             <TableHead>MACD (D)</TableHead>
             <TableHead>Volume</TableHead>
           </TableRow>
@@ -139,14 +139,14 @@ const CryptoGrid = ({
                 <TableCell>
                   <Badge
                     className={
-                      crypto.rsi?.h1 > 70
+                      crypto.rsi?.daily > 70
                         ? "bg-red-500 text-white"
-                        : crypto.rsi?.h1 < 30
+                        : crypto.rsi?.daily < 30
                           ? "bg-blue-400 text-white"
                           : "bg-gray-300 text-black"
                     }
                   >
-                    {crypto.rsi?.h1.toFixed(2) ?? "N/A"}
+                    {crypto.rsi?.daily.toFixed(2) ?? "N/A"}
                   </Badge>
                 </TableCell>
                 <TableCell>
