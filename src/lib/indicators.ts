@@ -1,3 +1,41 @@
+import { CCI, Candle } from "trading-signals";
+
+export function calculateCCIFromLibrary(
+  data: { high: number[]; low: number[]; close: number[] },
+  period: number,
+): number[] {
+  const { high, low, close } = data;
+
+  // Ensure input arrays are aligned to the same length
+  const minLength = Math.min(high.length, low.length, close.length);
+  const alignedHigh = high.slice(0, minLength);
+  const alignedLow = low.slice(0, minLength);
+  const alignedClose = close.slice(0, minLength);
+
+  if (alignedHigh.length < period) {
+    console.warn("Not enough data to calculate CCI.");
+    return Array(alignedHigh.length).fill(NaN); // Return NaN-filled array if not enough data
+  }
+
+  // Create CCI instance
+  const cci = new CCI(period);
+  const result: number[] = [];
+
+  // Feed data into CCI and collect results
+  for (let i = 0; i < alignedHigh.length; i++) {
+    const candle: Candle = {
+      high: alignedHigh[i],
+      low: alignedLow[i],
+      close: alignedClose[i],
+    };
+
+    cci.update(candle);
+    result.push(cci.isStable ? cci.getResult() : NaN); // Push NaN until enough data is processed
+  }
+
+  return result;
+}
+
 export function calculateRSI(prices: number[], periods: number = 14): number {
   if (prices.length < periods + 1) return 50; // Default value if not enough data
 
@@ -34,49 +72,6 @@ export function calculateRSI(prices: number[], periods: number = 14): number {
   const RS = avgGain / avgLoss;
   return +(100 - 100 / (1 + RS)).toFixed(2); // Rounded to 2 decimal places
 }
-
-export function calculateCCI(
-  data: { high: number[] | undefined; low: number[] | undefined; close: number[] | undefined },
-  period: number = 20
-): number[] {
-  const { high, low, close } = data;
-
-  // Validate inputs
-  if (!high || !low || !close || high.length === 0 || low.length === 0 || close.length === 0) {
-    console.warn("Invalid input data for CCI calculation. Missing or empty arrays.", { high, low, close });
-    return []; // Return an empty array if any input is missing or invalid
-  }
-
-  // Ensure arrays are aligned to the same length
-  const minLength = Math.min(high.length, low.length, close.length);
-  const alignedHigh = high.slice(0, minLength);
-  const alignedLow = low.slice(0, minLength);
-  const alignedClose = close.slice(0, minLength);
-
-  if (minLength < period) {
-    console.warn("Not enough data to calculate CCI. Minimum required:", period);
-    return Array(minLength).fill(NaN); // Fill with NaN if not enough data
-  }
-
-  const typicalPrices = alignedHigh.map((h, i) => (h + alignedLow[i] + alignedClose[i]) / 3);
-  const cci: number[] = [];
-
-  for (let i = 0; i < typicalPrices.length; i++) {
-    if (i < period - 1) {
-      cci.push(NaN); // Not enough data for this entry
-      continue;
-    }
-
-    const tpSlice = typicalPrices.slice(i - period + 1, i + 1);
-    const sma = tpSlice.reduce((sum, tp) => sum + tp, 0) / period;
-    const meanDeviation = tpSlice.reduce((sum, tp) => sum + Math.abs(tp - sma), 0) / period;
-
-    cci.push(((typicalPrices[i] - sma) / (0.015 * meanDeviation)) || 0);
-  }
-
-  return cci;
-}
-
 
 export function calculateEMA(prices: number[], periods: number): number[] {
   const k = 2 / (periods + 1);
